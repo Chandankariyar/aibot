@@ -1,0 +1,292 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title> kritrim Chatmitra</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #1a202c;
+            color: #e2e8f0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            padding: 1rem;
+        }
+
+        .chat-container {
+            background-color: #2d3748;
+            border-radius: 1.5rem;
+            box-shadow: 0 10px 15px rgba(0, 0, 0, 0.5);
+            width: 100%;
+            max-width: 600px;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            border: 4px solid #4a5568;
+        }
+
+        .chat-header {
+            background-color: #4a5568;
+            padding: 1rem;
+            text-align: center;
+            font-weight: bold;
+            font-size: 1.25rem;
+            border-bottom: 2px solid #2d3748;
+        }
+
+        .chat-messages {
+            flex-grow: 1;
+            padding: 1rem;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+        }
+
+        .message {
+            max-width: 80%;
+            padding: 0.75rem;
+            border-radius: 1rem;
+            line-height: 1.5;
+        }
+
+        .user-message {
+            background-color: #3b82f6;
+            color: white;
+            align-self: flex-end;
+            border-bottom-right-radius: 0.25rem;
+        }
+
+        .bot-message {
+            background-color: #4a5568;
+            align-self: flex-start;
+            border-bottom-left-radius: 0.25rem;
+        }
+
+        .input-container {
+            display: flex;
+            padding: 1rem;
+            background-color: #2d3748;
+            border-top: 2px solid #4a5568;
+        }
+
+        #userInput {
+            flex-grow: 1;
+            padding: 0.75rem;
+            border: 2px solid #4a5568;
+            border-radius: 1rem;
+            background-color: #1a202c;
+            color: #e2e8f0;
+            outline: none;
+            transition: border-color 0.2s;
+        }
+
+        #userInput:focus {
+            border-color: #3b82f6;
+        }
+
+        #sendButton {
+            padding: 0.75rem 1.5rem;
+            margin-left: 0.5rem;
+            background-color: #3b82f6;
+            color: white;
+            border-radius: 1rem;
+            font-weight: bold;
+            cursor: pointer;
+            transition: background-color 0.2s, transform 0.2s;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
+            border: none;
+        }
+
+        #sendButton:hover {
+            background-color: #2563eb;
+            transform: translateY(-2px);
+            box-shadow: 0 6px 8px rgba(0, 0, 0, 0.5);
+        }
+
+        #sendButton:active {
+            transform: translateY(2px);
+            box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.5);
+        }
+
+        .typing-indicator {
+            display: inline-block;
+            background-color: #4a5568;
+            padding: 0.75rem;
+            border-radius: 1rem;
+            border-bottom-left-radius: 0.25rem;
+            align-self: flex-start;
+        }
+
+        .dot-pulse {
+            position: relative;
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            background-color: #cbd5e0;
+            animation: dot-pulse 1s infinite ease-in-out;
+        }
+
+        .dot-pulse::before,
+        .dot-pulse::after {
+            content: '';
+            display: block;
+            position: absolute;
+            top: 0;
+            left: -15px;
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            background-color: #cbd5e0;
+            animation: dot-pulse-before 1s infinite ease-in-out;
+        }
+
+        .dot-pulse::after {
+            left: 15px;
+            animation: dot-pulse-after 1s infinite ease-in-out;
+        }
+
+        @keyframes dot-pulse {
+            0%, 100% {
+                transform: scale(0.8);
+            }
+            50% {
+                transform: scale(1.2);
+            }
+        }
+
+        @keyframes dot-pulse-before {
+            0%, 100% {
+                transform: scale(0.8);
+            }
+            50% {
+                transform: scale(1.2);
+            }
+        }
+
+        @keyframes dot-pulse-after {
+            0%, 100% {
+                transform: scale(0.8);
+            }
+            50% {
+                transform: scale(1.2);
+            }
+        }
+    </style>
+</head>
+<body>
+
+<div class="chat-container">
+    <div class="chat-header">Kritrim chatmitra</div>
+    <div id="chatMessages" class="chat-messages">
+        <div class="bot-message message">Hello! How can I help you today?</div>
+    </div>
+    <div class="input-container">
+        <input type="text" id="userInput" placeholder="Type a message..." class="flex-grow p-3 rounded-l-full bg-gray-700 text-gray-200 border-2 border-gray-600 focus:outline-none focus:border-blue-500">
+        <button id="sendButton" class="px-6 py-3 rounded-r-full bg-blue-600 hover:bg-blue-700 text-white font-semibold transition-all duration-200">Send</button>
+    </div>
+</div>
+
+<script>
+    const chatMessages = document.getElementById('chatMessages');
+    const userInput = document.getElementById('userInput');
+    const sendButton = document.getElementById('sendButton');
+
+    // State for the conversation
+    let chatHistory = [];
+    const API_URL = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-05-20:generateContent`;
+    const apiKey = ""; // Canvas will provide this at runtime
+
+    // Function to add a message to the chat
+    function addMessage(text, sender) {
+        const messageDiv = document.createElement('div');
+        messageDiv.classList.add('message');
+        if (sender === 'user') {
+            messageDiv.classList.add('user-message');
+        } else {
+            messageDiv.classList.add('bot-message');
+        }
+        messageDiv.textContent = text;
+        chatMessages.appendChild(messageDiv);
+        chatMessages.scrollTop = chatMessages.scrollHeight;
+    }
+
+    // Function to show/hide a typing indicator
+    let typingIndicator = null;
+    function showTypingIndicator() {
+        if (!typingIndicator) {
+            typingIndicator = document.createElement('div');
+            typingIndicator.classList.add('typing-indicator');
+            typingIndicator.innerHTML = '<div class="dot-pulse"></div>';
+            chatMessages.appendChild(typingIndicator);
+            chatMessages.scrollTop = chatMessages.scrollHeight;
+        }
+    }
+
+    function hideTypingIndicator() {
+        if (typingIndicator) {
+            chatMessages.removeChild(typingIndicator);
+            typingIndicator = null;
+        }
+    }
+
+    // Function to send a message to the Gemini API
+    async function sendMessage() {
+        const userMessage = userInput.value.trim();
+        if (userMessage === '') return;
+
+        addMessage(userMessage, 'user');
+        userInput.value = '';
+        showTypingIndicator();
+
+        chatHistory.push({ role: 'user', parts: [{ text: userMessage }] });
+        
+        try {
+            const payload = {
+                contents: chatHistory,
+            };
+
+            const response = await fetch(`${API_URL}?key=${apiKey}`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload)
+            });
+
+            if (!response.ok) {
+                const errorData = await response.json();
+                console.error('API Error:', errorData);
+                throw new Error(`API returned status ${response.status}: ${errorData.error.message}`);
+            }
+
+            const result = await response.json();
+            const botResponse = result.candidates?.[0]?.content?.parts?.[0]?.text;
+
+            if (botResponse) {
+                hideTypingIndicator();
+                addMessage(botResponse, 'bot');
+                chatHistory.push({ role: 'model', parts: [{ text: botResponse }] });
+            } else {
+                throw new Error('No valid response from model.');
+            }
+
+        } catch (error) {
+            hideTypingIndicator();
+            addMessage(`Error: ${error.message}`, 'bot');
+            console.error('Chatbot error:', error);
+        }
+    }
+
+    sendButton.addEventListener('click', sendMessage);
+    userInput.addEventListener('keypress', (e) => {
+        if (e.key === 'Enter') {
+            sendMessage();
+        }
+    });
+</script>
+
+</body>
+</html>
