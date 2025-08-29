@@ -15,7 +15,7 @@
             align-items: center;
             min-height: 100vh;
             padding: 1rem;
-            overflow: hidden;
+            /* The 'overflow: hidden' rule was removed from here. */
         }
 
         .chat-container {
@@ -25,6 +25,7 @@
             box-shadow: 0 0 30px rgba(50, 150, 250, 0.5);
             width: 100%;
             max-width: 700px;
+            height: 90vh; /* Set a fixed height for the container */
             display: flex;
             flex-direction: column;
             overflow: hidden;
@@ -52,7 +53,7 @@
         .chat-messages {
             flex-grow: 1;
             padding: 1rem;
-            overflow-y: auto;
+            overflow-y: auto; /* This correctly enables vertical scrolling for the messages */
             display: flex;
             flex-direction: column;
             gap: 1rem;
